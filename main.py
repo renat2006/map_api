@@ -12,8 +12,21 @@ map_types = ['map', 'sat', 'sat,skl']
 type_ind = 0
 
 
+def load_image(name, color_key=None):
+    fullname = os.path.join('data', name)
+    if not os.path.isfile(fullname):
+        print(f"Файл с изображением '{fullname}' не найден")
+        sys.exit()
+    image = pygame.image.load(fullname)
+
+    if color_key is not None:
+        if color_key == -1:
+            color_key = image.get_at((0, 0))
+        image.set_colorkey(color_key)
+    return image
+
+
 def change_ll(ind):
-    print('f')
     if ind == 0:
         COORDS[0] -= 0.1
     elif ind == 1:
@@ -22,7 +35,6 @@ def change_ll(ind):
         COORDS[1] += 0.1
     else:
         COORDS[1] -= 0.1
-    print(COORDS)
 
 
 POINTS = []
@@ -49,6 +61,13 @@ screen.blit(pygame.image.load(map_file), (0, 0))
 running = True
 search_text = ''
 API_KEY = '40d1649f-0493-4b70-98ba-98533de7710b'
+
+all_sprites = pygame.sprite.Group()
+arrow_image = load_image("arrow.png")
+
+arrow = pygame.sprite.Sprite(all_sprites)
+arrow.image = arrow_image
+arrow.rect = arrow.image.get_rect()
 
 
 def geocode(address):
@@ -99,10 +118,31 @@ def get_pos_name(geocoder_request):
         return toponym_address
 
 
+coord_to_geo_x = 0.0000428
+coord_to_geo_y = 0.0000428
+lat = 55.796127
+lon = 49.106414
+zoom = 15
+
+
+def screen_to_geo(pos):
+    dy = 225 - pos[1]
+    dx = pos[0] - 300
+    lx = lon + dx * coord_to_geo_x * math.pow(2, 15 - zoom)
+    ly = lat + dy * coord_to_geo_y * math.cos(math.radians(lat)) * math.pow(2, 15 - zoom)
+    return lx, ly
+
+
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            pos = pygame.mouse.get_pos()
+            arrow.rect.x = pos[0] - 25
+            arrow.rect.y = pos[1] - 50
+            pygame.display.set_caption(str(screen_to_geo(pos)))
 
         elif event.type == pygame.KEYDOWN:
             char = event.unicode
@@ -145,7 +185,9 @@ while running:
 
                     SPN[0] = round(SPN[0] - 0.02, 3)
                     SPN[1] = round(SPN[1] - 0.02, 3)
-
+    screen.blit(pygame.image.load(map_file), (0, 0))
+    all_sprites.update()
+    all_sprites.draw(screen)
     pygame.display.flip()
 
 pygame.quit()
