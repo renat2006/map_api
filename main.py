@@ -142,7 +142,7 @@ while running:
             pos = pygame.mouse.get_pos()
             arrow.rect.x = pos[0] - 25
             arrow.rect.y = pos[1] - 25
-            print(POINTS)
+            #починить появление
             POINTS.append(','.join(list(map(str, screen_to_geo(pos)))) + ',pm2ywl')
             pygame.display.set_caption(get_pos_name(screen_to_geo(pos)))
 
