@@ -141,8 +141,10 @@ while running:
         if event.type == pygame.MOUSEBUTTONDOWN:
             pos = pygame.mouse.get_pos()
             arrow.rect.x = pos[0] - 25
-            arrow.rect.y = pos[1] - 50
-            pygame.display.set_caption(str(screen_to_geo(pos)))
+            arrow.rect.y = pos[1] - 25
+            print(POINTS)
+            POINTS.append(','.join(list(map(str, screen_to_geo(pos)))) + ',pm2ywl')
+            pygame.display.set_caption(get_pos_name(screen_to_geo(pos)))
 
         elif event.type == pygame.KEYDOWN:
             char = event.unicode
@@ -154,7 +156,8 @@ while running:
             if char.isalpha() or char.isnumeric() or char == ' ':
                 search_text += char
             if event.key == pygame.K_RETURN:
-                COORDS = get_coordinates(search_text)
+                COORDS = list(map(float, get_coordinates(search_text)))
+
                 search_text = get_pos_name(search_text)
                 POINTS.append(','.join(list(map(str, COORDS))) + ',pm2ywl')
 
