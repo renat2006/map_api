@@ -1,5 +1,6 @@
 import os
 import sys
+import pprint
 import pygame
 import requests
 import math
@@ -10,20 +11,6 @@ map_api_server = "http://static-maps.yandex.ru/1.x/"
 map_file = "map.png"
 map_types = ['map', 'sat', 'sat,skl']
 type_ind = 0
-
-
-def load_image(name, color_key=None):
-    fullname = os.path.join('data', name)
-    if not os.path.isfile(fullname):
-        print(f"Файл с изображением '{fullname}' не найден")
-        sys.exit()
-    image = pygame.image.load(fullname)
-
-    if color_key is not None:
-        if color_key == -1:
-            color_key = image.get_at((0, 0))
-        image.set_colorkey(color_key)
-    return image
 
 
 def change_ll(ind):
@@ -62,13 +49,6 @@ running = True
 search_text = ''
 API_KEY = '40d1649f-0493-4b70-98ba-98533de7710b'
 
-all_sprites = pygame.sprite.Group()
-arrow_image = load_image("arrow.png")
-
-arrow = pygame.sprite.Sprite(all_sprites)
-arrow.image = arrow_image
-arrow.rect = arrow.image.get_rect()
-
 
 def geocode(address):
     geocoder_request = f"http://geocode-maps.yandex.ru/1.x/"
@@ -103,6 +83,15 @@ def get_coordinates(address):
     return toponym_longitude, toponym_lattitude
 
 
+def screen_to_geo(pos):
+    dy = 225 - pos[1]
+    dx = pos[0] - 300
+    lx = lon + dx * coord_to_geo_x * math.pow(2, 15 - zoom)
+    ly = lat + dy * coord_to_geo_y * math.cos(math.radians(lat)) * math.pow(2, 15 - zoom)
+    return lx, ly
+
+
+
 def get_pos_name(geocoder_request):
     geocoder_request = f"http://geocode-maps.yandex.ru/1.x/?apikey=40d1649f-0493-4b70-98ba-98533de7710b&geocode=" \
                        f"{geocoder_request}&format=json"
@@ -117,6 +106,19 @@ def get_pos_name(geocoder_request):
         toponym_coodrinates = toponym["Point"]["pos"].split()[::-1]
         return toponym_address
 
+def get_postal_code(geocoder_request):
+    try:
+        geocoder_request = get_pos_name(geocoder_request)
+        geocoder_request = f"http://geocode-maps.yandex.ru/1.x/?apikey=40d1649f-0493-4b70-98ba-98533de7710b&geocode=" \
+                           f"{geocoder_request}&format=json"
+        response = requests.get(geocoder_request)
+        res_dict = response.json()
+        info = res_dict["response"]["GeoObjectCollection"]['featureMember'][0]['GeoObject']
+        postal_code = info['metaDataProperty']['GeocoderMetaData']['Address']['postal_code']
+        return postal_code
+    except KeyError:
+        pass
+
 
 coord_to_geo_x = 0.0000428
 coord_to_geo_y = 0.0000428
@@ -124,14 +126,7 @@ lat = 55.796127
 lon = 49.106414
 zoom = 15
 
-
-def screen_to_geo(pos):
-    dy = 225 - pos[1]
-    dx = pos[0] - 300
-    lx = lon + dx * coord_to_geo_x * math.pow(2, 15 - zoom)
-    ly = lat + dy * coord_to_geo_y * math.cos(math.radians(lat)) * math.pow(2, 15 - zoom)
-    return lx, ly
-
+add_postal_code = False
 
 while running:
     for event in pygame.event.get():
@@ -140,11 +135,14 @@ while running:
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             pos = pygame.mouse.get_pos()
-            arrow.rect.x = pos[0] - 25
-            arrow.rect.y = pos[1] - 25
             #починить появление
             POINTS.append(','.join(list(map(str, screen_to_geo(pos)))) + ',pm2ywl')
-            pygame.display.set_caption(get_pos_name(screen_to_geo(pos)))
+            if add_postal_code:
+                pygame.display.set_caption(
+                    f"{get_pos_name(screen_to_geo(pos))} почтовый индекс: "
+                    f"{get_postal_code(screen_to_geo(pos))}")
+            else:
+                pygame.display.set_caption(get_pos_name(screen_to_geo(pos)))
 
         elif event.type == pygame.KEYDOWN:
             char = event.unicode
@@ -157,9 +155,8 @@ while running:
                 search_text += char
             if event.key == pygame.K_RETURN:
                 COORDS = list(map(float, get_coordinates(search_text)))
-
-                search_text = get_pos_name(search_text)
-                POINTS.append(','.join(list(map(str, COORDS))) + ',pm2ywl')
+            if event.key == pygame.K_SPACE:
+                add_postal_code = True
 
             pygame.display.set_caption(search_text)
             try:
@@ -189,8 +186,6 @@ while running:
                     SPN[0] = round(SPN[0] - 0.02, 3)
                     SPN[1] = round(SPN[1] - 0.02, 3)
     screen.blit(pygame.image.load(map_file), (0, 0))
-    all_sprites.update()
-    all_sprites.draw(screen)
     pygame.display.flip()
 
 pygame.quit()
