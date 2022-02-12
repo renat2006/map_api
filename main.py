@@ -91,7 +91,6 @@ def screen_to_geo(pos):
     return lx, ly
 
 
-
 def get_pos_name(geocoder_request):
     geocoder_request = f"http://geocode-maps.yandex.ru/1.x/?apikey=40d1649f-0493-4b70-98ba-98533de7710b&geocode=" \
                        f"{geocoder_request}&format=json"
@@ -105,6 +104,7 @@ def get_pos_name(geocoder_request):
 
         toponym_coodrinates = toponym["Point"]["pos"].split()[::-1]
         return toponym_address
+
 
 def get_postal_code(geocoder_request):
     try:
@@ -135,8 +135,9 @@ while running:
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             pos = pygame.mouse.get_pos()
-            #починить появление
+            # починить появление -- already fixed
             POINTS.append(','.join(list(map(str, screen_to_geo(pos)))) + ',pm2ywl')
+            load_file(COORDS, SPN)
             if add_postal_code:
                 pygame.display.set_caption(
                     f"{get_pos_name(screen_to_geo(pos))} почтовый индекс: "
@@ -144,7 +145,7 @@ while running:
             else:
                 pygame.display.set_caption(get_pos_name(screen_to_geo(pos)))
 
-        elif event.type == pygame.KEYDOWN:
+        if event.type == pygame.KEYDOWN:
             char = event.unicode
             if event.key == pygame.K_DELETE:
                 search_text = ''
@@ -156,7 +157,7 @@ while running:
             if event.key == pygame.K_RETURN:
                 COORDS = list(map(float, get_coordinates(search_text)))
             if event.key == pygame.K_SPACE:
-                add_postal_code = True
+                add_postal_code = not add_postal_code
 
             pygame.display.set_caption(search_text)
             try:
@@ -174,7 +175,7 @@ while running:
                 elif event.key in [pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN]:
                     change_ll([pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN].index(event.key))
                 load_file(COORDS, SPN)
-                screen.blit(pygame.image.load(map_file), (0, 0))
+                # screen.blit(pygame.image.load(map_file), (0, 0))
             except Exception as e:
                 if event.key == pygame.K_PAGEDOWN:
                     print(True)
@@ -185,6 +186,7 @@ while running:
 
                     SPN[0] = round(SPN[0] - 0.02, 3)
                     SPN[1] = round(SPN[1] - 0.02, 3)
+
     screen.blit(pygame.image.load(map_file), (0, 0))
     pygame.display.flip()
 
