@@ -48,7 +48,7 @@ screen.blit(pygame.image.load(map_file), (0, 0))
 running = True
 search_text = ''
 API_KEY = '40d1649f-0493-4b70-98ba-98533de7710b'
-
+org_api_key = 'dda3ddba-c9ea-4ead-9010-f43fbc15c6e3'
 
 def geocode(address):
     geocoder_request = f"http://geocode-maps.yandex.ru/1.x/"
@@ -134,16 +134,40 @@ while running:
             running = False
 
         if event.type == pygame.MOUSEBUTTONDOWN:
-            pos = pygame.mouse.get_pos()
-            # починить появление -- already fixed
-            POINTS.append(','.join(list(map(str, screen_to_geo(pos)))) + ',pm2ywl')
-            load_file(COORDS, SPN)
-            if add_postal_code:
-                pygame.display.set_caption(
-                    f"{get_pos_name(screen_to_geo(pos))} почтовый индекс: "
-                    f"{get_postal_code(screen_to_geo(pos))}")
-            else:
-                pygame.display.set_caption(get_pos_name(screen_to_geo(pos)))
+            if event.button == 1:
+                pos = pygame.mouse.get_pos()
+                # починить появление (fixed)
+                POINTS.append(','.join(list(map(str, screen_to_geo(pos)))) + ',pm2ywl')
+                load_file(COORDS, SPN)
+                if add_postal_code:
+                    pygame.display.set_caption(
+                        f"{get_pos_name(screen_to_geo(pos))} почтовый индекс: "
+                        f"{get_postal_code(screen_to_geo(pos))}")
+                else:
+                    pygame.display.set_caption(get_pos_name(screen_to_geo(pos)))
+            elif event.button == 3:
+                pos = pygame.mouse.get_pos()
+                search_api_server = "https://search-maps.yandex.ru/v1/"
+                pprint.pprint(screen_to_geo(pos))
+                address_ll = ",".join([str(i) for i in screen_to_geo(pos)])
+
+                search_params = {
+                    "apikey": org_api_key,
+                    "text": "ООО",
+                    "lang": "ru_RU",
+                    "spn": "0.001,0.001",
+                    "ll": address_ll,
+                    "type": "biz"
+                }
+
+                response = requests.get(search_api_server, params=search_params)
+                json_response = response.json()
+
+                organization = json_response["features"][0]
+                # Название организации.
+                org_name = organization["properties"]["CompanyMetaData"]["name"]
+
+                pygame.display.set_caption(org_name)
 
         if event.type == pygame.KEYDOWN:
             char = event.unicode
