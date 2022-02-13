@@ -50,6 +50,7 @@ search_text = ''
 API_KEY = '40d1649f-0493-4b70-98ba-98533de7710b'
 org_api_key = 'dda3ddba-c9ea-4ead-9010-f43fbc15c6e3'
 
+
 def geocode(address):
     geocoder_request = f"http://geocode-maps.yandex.ru/1.x/"
     geocoder_params = {
@@ -141,7 +142,7 @@ while running:
                 load_file(COORDS, SPN)
                 if add_postal_code:
                     pygame.display.set_caption(
-                        f"{get_pos_name(screen_to_geo(pos))} почтовый индекс: "
+                        f"{get_pos_name(screen_to_geo(pos))},"
                         f"{get_postal_code(screen_to_geo(pos))}")
                 else:
                     pygame.display.set_caption(get_pos_name(screen_to_geo(pos)))
